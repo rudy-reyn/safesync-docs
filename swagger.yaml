@@ -1,0 +1,408 @@
+openapi: 3.0.3
+info:
+  title: safesync.io API Documentation
+  description: |-
+    [Source Code](https://github.com/rudy-reyn/safesync-io)
+  contact:
+    email: rudy.reyn@gmail.com
+  version: 0.0.1
+
+externalDocs:
+  description: SafeSync API
+  url: http://docs.safesync.io
+
+servers:
+  - url: https://api.safesync.io/v1
+
+tags:
+  - name: object
+    description: Access to file objects
+  - name: partition
+    description: Access to object partitions
+  - name: user
+    description: User operations
+
+paths:
+  /object:
+    get:
+      tags:
+        - object
+      summary: Get object information and metadata
+      description: Get object information via objectId
+      operationId: getObject
+      parameters:
+        - name: objectId
+          in: query
+          description: ID of object to return
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+        '400':
+          description: Invalid object ID
+        '404':
+          description: Object not found
+      security:
+        - api_key:
+            - read:object
+    post:
+      tags:
+        - object
+      summary: Prepares creation of a new object
+      operationId: uploadObject
+      requestBody:
+        content:
+          application/json:
+            schema:
+                    type: object
+                    properties:
+                      bytes:
+                        type: number
+                        format: int32
+                      path:
+                        type: string
+                        format: base64
+                        example: "ZXhhbXBsZS50eHQ="
+                      modTime:
+                        type: string
+                        format: date-time
+                        example: "2023-02-21T05:02:51.398Z"
+                      salt:
+                        type: string
+                        format: base64
+                        example: "M2RIMzhxOTdZM2JjNkM0Yg=="
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+        '405':
+          description: Invalid
+      security:
+        - api_key:
+            - write:object
+            - read:object
+  
+    delete:
+      tags:
+        - object
+      summary: Deletes an object
+      description: Deletes an object and the associated users access to the objects partitions.
+      operationId: deleteObject
+      parameters:
+        - name: objectId
+          in: header
+          description: The associated objects UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object successfully deleted
+        '400':
+          description: Invalid objectId
+      security:
+        - api_key:
+            - write:object
+            - read:object
+
+  /partition:
+    get:
+      tags:
+        - partition
+      summary: Get partition information and a pre-signed S3 download URL
+      operationId: getPartition
+      parameters:
+        - name: partitionId
+          in: query
+          description: ID of partition to return
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partition'
+        '400':
+          description: Invalid partitionId
+      security:
+        - api_key:
+            - write:object
+            - read:object
+    post:
+      tags:
+        - partition
+      summary: Creates an entry for a new object partition and generates a pre-signed S3 upload URL
+      operationId: uploadPartition
+      requestBody:
+        content:
+          application/json:
+            schema:
+                    type: object
+                    properties:
+                      partitionId:
+                        type: string
+                        format: uuid
+                        example: "047face4-7de3-4821-9c4d-b53099e532cf"
+                      salt:
+                        type: string
+                        example: "acjZ8qj3ndbc6C4b"
+                      checksum:
+                        type: string
+                        example: "803e4400f1c1a90b7824ab79f943acafbd7f14e20c9056d7d302c346e11b24a6"
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                    format: url
+                    example: "https://s3.safesync.io/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
+      security:
+        - api_key:
+            - write:object
+            - read:object
+
+  /user:
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: This can only be done by the logged in user.
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  
+  /user/login:
+    get:
+      tags:
+        - user
+      summary: Logs user into the system
+      description: ''
+      operationId: loginUser
+      parameters:
+        - name: username
+          in: query
+          description: The user name for login
+          required: false
+          schema:
+            type: string
+        - name: password
+          in: query
+          description: The password for login in clear text
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          description: Invalid username/password supplied
+  
+  /user/{username}:
+    get:
+      tags:
+        - user
+      summary: Get user by user name
+      description: ''
+      operationId: getUserByName
+      parameters:
+        - name: username
+          in: path
+          description: 'The name that needs to be fetched. Use user1 for testing. '
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'          
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+    put:
+      tags:
+        - user
+      summary: Update user
+      description: This can only be done by the logged in user.
+      operationId: updateUser
+      parameters:
+        - name: username
+          in: path
+          description: name that need to be deleted
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Update an existent user in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: successful operation
+    delete:
+      tags:
+        - user
+      summary: Delete user
+      description: This can only be done by the logged in user.
+      operationId: deleteUser
+      parameters:
+        - name: username
+          in: path
+          description: The name that needs to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+
+components:
+  schemas:
+    Object:
+      type: object
+      properties:
+        objectId:
+          type: string
+          format: uuid
+          example: "0bf580b5-efed-4133-b5f1-d3d301698933"
+        userId:
+          type: string
+          format: uuid
+          example: "75d9f3cf-6de0-4b62-8c58-76caefab90e6"
+        uploadedAt:
+          type: string
+          format: date-time
+        path:
+          type: string
+          format: base64
+          example: "ZXhhbXBsZS50eHQ="
+        modTime:
+          type: string
+          format: date-time
+          example: "2023-02-21T05:02:51.398Z"
+        salt:
+          type: string
+          example: "3dH38q97Y3bc6C4b"
+        partitionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          example: ["047face4-7de3-4821-9c4d-b53099e532cf"]
+
+    Partition:
+      type: object
+      properties:
+        partitionId:
+          type: string
+          format: uuid
+          example: "047face4-7de3-4821-9c4d-b53099e532cf"
+        salt:
+          type: string
+          example: "acjZ8qj3ndbc6C4b"
+        checksum:
+          type: string
+          example: "803e4400f1c1a90b7824ab79f943acafbd7f14e20c9056d7d302c346e11b24a6"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-02-21T05:02:51.398Z"
+        updatedAt:
+          type: string
+          format: date-time
+        downloadUrl:
+          type: string
+          format: url
+          example: "https://s3.safesync.io/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
+
+    User:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 10
+        email:
+          type: string
+          example: john@email.com
+        phone:
+          type: string
+          example: '12345'
+          format: phone
+        password:
+          type: string
+          example: '12345'
+        passwordSalt:
+          type: string
+          format: base64
+          example: "M2RIMzhxOTdZM2JjNkM0Yg=="
+        masterKey:
+          type: string
+          description: Encrypted master key.
+          format: base64
+          example: null
+        keySalt:
+          type: string
+          description: Used for key derivation for decrypting the master key.
+          format: base64
+          example: "M2RIMzhxOTdZM2JjNkM0Yg=="
+
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
