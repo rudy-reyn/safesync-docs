@@ -1,18 +1,18 @@
 openapi: 3.0.3
 info:
-  title: safesync.io API Documentation
+  title: safesync API Documentation
   description: |-
-    [Source Code](https://github.com/rudy-reyn/safesync-io)
+    [Source Code](https://github.com/rudy-reyn/safesync)
   contact:
     email: rudy.reyn@gmail.com
   version: 0.0.1
 
 externalDocs:
   description: SafeSync API
-  url: http://docs.safesync.io
+  url: http://safesync.reyn.dev
 
 servers:
-  - url: https://api.safesync.io/v1
+  - url: https://safesync.reyn.dev/api
 
 tags:
   - name: object
@@ -176,7 +176,7 @@ paths:
                   uploadUrl:
                     type: string
                     format: url
-                    example: "https://s3.safesync.io/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
+                    example: "https://safesync.reyn.dev/s3/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
       security:
         - api_key:
             - write:object
@@ -367,7 +367,7 @@ components:
         downloadUrl:
           type: string
           format: url
-          example: "https://s3.safesync.io/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
+          example: "https://safesync.reyn.dev/s3/partitions/047face4-7de3-4821-9c4d-b53099e532cf?X-Amz-Signature=429109ba582caa9fd77ebd0a2cbc32c81b9e983481ce93a0b02b8b957d935c60&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20230226%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230226T054259Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host"
 
     User:
       type: object
